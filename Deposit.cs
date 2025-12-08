@@ -1,6 +1,10 @@
-﻿namespace TellerConsole
+﻿using TellerConsole.Database;
+using TellerConsole.Modules;
+
+namespace TellerConsole
 {
-    public class Deposit : Transaction
+
+    public class Deposit : Transactions.Transaction
     {
         public override void ProcessTransaction(Member member, decimal transactionAmount)
         {
