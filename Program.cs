@@ -1,4 +1,8 @@
 ﻿using TellerConsole;
+using TellerConsole.Database;
+using TellerConsole.Extensions;
+using TellerConsole.Modules;
+using TellerConsole.Transactions;
 
 
 
@@ -77,7 +81,7 @@ while (processTran == true)
             switch (transactionType)
             {
                 case (int)TransactionType.Deposit:
-                    transaction = new Deposit();
+                    transaction = new TellerConsole.Transactions.Deposit();
                     break;
                 case (int)TransactionType.Withdrawal:
                     transaction = new Withdraw();
