@@ -1,4 +1,4 @@
-﻿namespace TellerConsole.Transactions
+﻿namespace TellerDomain
 {
     public enum TransactionType
     {
