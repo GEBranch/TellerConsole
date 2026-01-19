@@ -1,36 +1,31 @@
-﻿using TellerConsole.Members;
-using TellerConsole.Transactions;
+﻿
+using TellerDomain;
 
-namespace TellerConsole.Extensions
+namespace TellerConsole
 {
     public static class Extensions
     {
-        public static bool IsInRange(this int value, int min, int max)
-        {
-            return value >= min && value <= max;
-        }
-
-        public static string IsValidTransactionType(this int transactionType)
+        public static bool IsValidTransactionType(this TransactionType transactionType)
         {
             switch (transactionType)
             {
-                case (int)TransactionType.Deposit:
-                case (int)TransactionType.Withdrawal:
-                    return string.Empty;
+                case TransactionType.Deposit:
+                case TransactionType.Withdrawal:
+                    return true;
                 default:
-                    return $"{transactionType} is not a valid Transaction Type";
+                    return false;
             }
         }
 
-        public static string IsValidAccountType(this int accountType)
+        public static bool IsValidAccountType(this AccountType accountType)
         {
             switch (accountType)
             {
-                case (int)AccountType.Checking:
-                case (int)AccountType.Savings:
-                    return string.Empty;
+                case AccountType.Checking:
+                case AccountType.Savings:
+                    return true;
                 default:
-                    return $"{accountType} is not a valid Account Type";
+                    return false;
             }
         }
     }

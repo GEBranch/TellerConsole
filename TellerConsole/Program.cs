@@ -1,103 +1,138 @@
-﻿using TellerConsole;
-using TellerConsole.Database;
-using TellerConsole.Extensions;
-using TellerConsole.Modules;
-using TellerConsole.Transactions;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Serilog;
+using TellerDomain;
 
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .WriteTo.File("TellerConsoleLog.txt", rollingInterval: RollingInterval.Day,
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .CreateLogger();
 
+var builder = Host.CreateApplicationBuilder(args);
+builder.Services.AddAutoMapper(cfg => { }, typeof(Program).Assembly);
 
-// Initialize the Member database with default values.
-MemberDB.InitializeDB();
-
-bool processTran = true;
-while (processTran == true)
+Functions.GetMapper();
+Functions.SetupDb();
+             
+bool runProcess = true;
+while (runProcess == true)
 {
     try
     {
-        Member member = new Member();
-        string tranAmount;
         decimal transactionAmount = 0m;
-        decimal beginningBalance = 0m;
-        string acctType;
-        int accountType;
-        string tranType;
-        int transactionType = 0;
-        string acctNumber;
-        int accountNumber;
+        Transaction transaction = new Transaction();
 
-        bool isValidTransaction = false;
+        runProcess = true;
 
         Console.WriteLine("_____________________________");
         Console.WriteLine("Processing new transaction...");
         Console.WriteLine("_____________________________");
 
-
         do
         {
-            Console.Write("Enter the Account Number: ");
-            acctNumber = Console.ReadLine();
-            accountNumber = Convert.ToInt32(acctNumber);
+            Console.Write("Enter the Account Number or Q for quit: ");
+            var acctNumber = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(acctNumber))
+            {
+                runProcess = false;
+                continue;
+            }
+            if (acctNumber.ToUpper() == "Q")
+            {
+                runProcess = false;
+                continue;
+            }
+            transaction.AccountNumber = Convert.ToInt32(acctNumber);
 
             Console.Write("Enter the Account Type: (Checking = 1, Savings = 2): ");
-            acctType = Console.ReadLine();
-            accountType = Convert.ToInt32(acctType);
-            if (!string.IsNullOrWhiteSpace(accountType.IsValidAccountType()))
+            transaction.AccountType = (AccountType)Int32.Parse(Console.ReadLine());
+            if (transaction.AccountType == AccountType.Undefined)
             {
-                Console.WriteLine(accountType.IsValidAccountType());
-
-                isValidTransaction = false;
+                runProcess = false;
+                continue;
+            }
+            if (!transaction.AccountType.IsValidAccountType())
+            {
+                Console.WriteLine("Invalid account type. Please enter 1 for Checking or 2 for Savings.");
                 continue;
             }
 
-            member = Member.GetMemberByAccountNumberAndType(accountNumber, accountType);
-            if (member.AccountNumber == 0)
+            try
             {
-                isValidTransaction = false;
+                transaction = Functions.GetMemberByAccountNumberAndType(transaction);
+            }
+            catch (Exception ex)
+            {
+                            
+                Log.Error(ex, ex.Message);
+                continue;
+            }
+                        
+            if (transaction.AccountDTO == null || transaction.AccountDTO?.AccountType == AccountType.Undefined)
+            {
+                Log.Error($"Account number {transaction.AccountNumber} with account type {transaction.AccountType} was not found.");
                 continue;
             }
 
-            beginningBalance = member.Balance;
+            transaction.OriginalAccountBalance = transaction.AccountDTO.Balance;
+            transaction.AccountType = transaction.AccountType;
+
 
             Console.Write("Enter the Transaction Type (Deposit = 1, Withdrawal = 2): ");
-            tranType = Console.ReadLine();
-            transactionType = Convert.ToInt32(tranType);
-            if (!transactionType.IsInRange(1, 2))
+            transaction.TransactionType = (TransactionType)Int32.Parse(Console.ReadLine());
+
+            if (!transaction.TransactionType.IsValidTransactionType())
             {
-                Console.WriteLine(transactionType.IsValidTransactionType());
-                isValidTransaction = false;
+                Console.WriteLine($"{transaction.TransactionType} is not a valid transaction type");
                 continue;
             }
 
             Console.Write("Enter the Amount: ");
-            tranAmount = Console.ReadLine();
-            transactionAmount = Convert.ToInt32(tranAmount);
-            if (transactionAmount == 0)
+            var tranAmount = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(tranAmount))
             {
-                Console.WriteLine("You must enter a positive amount.");
+                runProcess = false;
+                continue;
+            }
+            transaction.AmountToProcess = Convert.ToDecimal(tranAmount);
+            if (transaction.AmountToProcess <= 0)
+            {
+                Log.Information($"Account: {transaction.MemberDTO?.AccountNumber} - Invalid deposit amount: <= zero: {transaction.AmountToProcess}");
+                Console.WriteLine("Deposit amount must be greater than zero.");
                 continue;
             }
 
-            Transaction transaction;
-            switch (transactionType)
+            Transaction actionObject;
+            try
             {
-                case (int)TransactionType.Deposit:
-                    transaction = new TellerConsole.Transactions.Deposit();
-                    break;
-                case (int)TransactionType.Withdrawal:
-                    transaction = new Withdraw();
-                    break;
-                default:
-                    Console.WriteLine($"Invalid transaction type - {transactionType}.");
-                    continue;
+                switch (transaction.TransactionType)
+                {
+                    case TransactionType.Deposit:
+                        actionObject = new Deposit();
+                        break;
+                    case TransactionType.Withdrawal:
+                        actionObject = new Withdraw();
+                        break;
+                    default:
+                        Console.WriteLine($"Invalid transaction type - {transaction.TransactionType}.");
+                        continue;
+                }
+
+                transaction = actionObject.ProcessTransaction(transaction);
+                            
+            } catch (InvalidDataException ex)
+            {
+                Log.Error(ex.Message);
+                Console.WriteLine(ex.Message);
+                continue;
             }
-
-            transaction.ProcessTransaction(member, transactionAmount);
-
-            MemberDB.UpdateMember(member);
-
-            Console.WriteLine($"The Beginning balance was {beginningBalance} and the ending balance is {member.Balance}.");
+ 
+            Console.WriteLine($"The Beginning balance was {transaction.OriginalAccountBalance} and the ending balance is {transaction.AccountDTO.Balance}.");
         }
-        while (string.IsNullOrWhiteSpace(accountType.IsValidAccountType()) && isValidTransaction); 
+        while (runProcess);
+
+        Log.CloseAndFlush();
     }
 
     catch (Exception ex)
@@ -105,20 +140,5 @@ while (processTran == true)
         Console.WriteLine($"{ex.Message}");
         continue;
     }
+
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
