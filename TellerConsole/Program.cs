@@ -1,7 +1,14 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+﻿using Autofac;
+using Autofac.Core;
+using AutoMapper;
 using Serilog;
+using Serilog.Extensions.Logging;
 using TellerDomain;
+
+var _factory = new SerilogLoggerFactory();
+var _functions = new Functions();
+
+bool runProcess = true;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
@@ -9,19 +16,39 @@ Log.Logger = new LoggerConfiguration()
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
     .CreateLogger();
 
-var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddAutoMapper(cfg => { }, typeof(Program).Assembly);
+var builder = new ContainerBuilder();
+builder.RegisterInstance(_functions.GetMapper()).As<IMapper>().SingleInstance();
+builder.RegisterType<Deposit>();
+builder.RegisterType<Withdraw>();
 
-Functions.GetMapper();
-Functions.SetupDb();
+builder.RegisterAssemblyTypes(typeof(Program).Assembly)
+       .Where(t => t.IsSubclassOf(typeof(Transaction)))
+       .AsSelf();
+
+var container = builder.Build();
+
+Deposit deposit;
+Withdraw withdraw;
+IMapper mapper;
+using var scope = container.BeginLifetimeScope();
+try
+{
+    var result = scope.TryResolve<Deposit>(out deposit);
+    result = scope.TryResolve<Withdraw>(out withdraw);
+    result = scope.TryResolve<IMapper>(out mapper);
+} catch (DependencyResolutionException ex)
+{
+    Log.Error(ex, $"Dependency resolution failed: {ex.Message}");
+    Console.WriteLine("Application configuration error. Please contact support.");
+    runProcess = false;
+}
+_functions.SetupDb();
              
-bool runProcess = true;
 while (runProcess == true)
 {
     try
     {
-        decimal transactionAmount = 0m;
-        Transaction transaction = new Transaction();
+        var transaction = new Transaction();
 
         runProcess = true;
 
@@ -47,36 +74,27 @@ while (runProcess == true)
 
             Console.Write("Enter the Account Type: (Checking = 1, Savings = 2): ");
             transaction.AccountType = (AccountType)Int32.Parse(Console.ReadLine());
-            if (transaction.AccountType == AccountType.Undefined)
-            {
-                runProcess = false;
-                continue;
-            }
+
             if (!transaction.AccountType.IsValidAccountType())
             {
-                Console.WriteLine("Invalid account type. Please enter 1 for Checking or 2 for Savings.");
+                Log.Error($"Invalid account type {transaction.AccountType}. Please enter 1 for Checking or 2 for Savings.");
+                Console.WriteLine($"Invalid account type {transaction.AccountType}. Please enter 1 for Checking or 2 for Savings.");
+                runProcess = false;
                 continue;
             }
 
             try
             {
-                transaction = Functions.GetMemberByAccountNumberAndType(transaction);
+                transaction = _functions.GetMemberByAccountNumberAndType(transaction);
             }
-            catch (Exception ex)
+            catch (InvalidDataException ex)
             {
-                            
-                Log.Error(ex, ex.Message);
-                continue;
-            }
-                        
-            if (transaction.AccountDTO == null || transaction.AccountDTO?.AccountType == AccountType.Undefined)
-            {
-                Log.Error($"Account number {transaction.AccountNumber} with account type {transaction.AccountType} was not found.");
+                Log.Error(ex.Message);
+                Console.WriteLine(ex.Message);
                 continue;
             }
 
             transaction.OriginalAccountBalance = transaction.AccountDTO.Balance;
-            transaction.AccountType = transaction.AccountType;
 
 
             Console.Write("Enter the Transaction Type (Deposit = 1, Withdrawal = 2): ");
@@ -85,6 +103,7 @@ while (runProcess == true)
             if (!transaction.TransactionType.IsValidTransactionType())
             {
                 Console.WriteLine($"{transaction.TransactionType} is not a valid transaction type");
+                Log.Error($"{transaction.TransactionType} is not a valid transaction type");
                 continue;
             }
 
@@ -92,13 +111,14 @@ while (runProcess == true)
             var tranAmount = Console.ReadLine();
             if (string.IsNullOrWhiteSpace(tranAmount))
             {
+                Log.Error($"Account: {transaction.MemberDTO?.AccountNumber} - Invalid deposit amount: <= zero: {tranAmount}");
                 runProcess = false;
                 continue;
             }
             transaction.AmountToProcess = Convert.ToDecimal(tranAmount);
             if (transaction.AmountToProcess <= 0)
             {
-                Log.Information($"Account: {transaction.MemberDTO?.AccountNumber} - Invalid deposit amount: <= zero: {transaction.AmountToProcess}");
+                Log.Error($"Account: {transaction.MemberDTO?.AccountNumber} - Invalid deposit amount: <= zero: {transaction.AmountToProcess}");
                 Console.WriteLine("Deposit amount must be greater than zero.");
                 continue;
             }
@@ -109,10 +129,10 @@ while (runProcess == true)
                 switch (transaction.TransactionType)
                 {
                     case TransactionType.Deposit:
-                        actionObject = new Deposit();
+                        actionObject = deposit;
                         break;
                     case TransactionType.Withdrawal:
-                        actionObject = new Withdraw();
+                        actionObject = withdraw;
                         break;
                     default:
                         Console.WriteLine($"Invalid transaction type - {transaction.TransactionType}.");
