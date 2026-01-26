@@ -1,4 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Core;
 namespace TellerDB
 {
     public class BankContext : DbContext
@@ -7,13 +10,20 @@ namespace TellerDB
         public DbSet<Account> Accounts { get; set; }
         public DbSet<Address> Addresses { get; set; }
 
-
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.File("TellerConsoleLog_SQL.txt", rollingInterval: RollingInterval.Day,
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+                .CreateLogger();
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseSqlServer("Server=(local);Database=TellerDB;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=true");
-                optionsBuilder.EnableSensitiveDataLogging();
+                optionsBuilder.UseSqlServer("Server=(local);Database=TellerDB;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=true")
+                    .LogTo(Serilog.Log.Debug, 
+                            new[] { DbLoggerCategory.Database.Command.Name },
+                            LogLevel.Information
+                    ).EnableSensitiveDataLogging();
             }
         }
 

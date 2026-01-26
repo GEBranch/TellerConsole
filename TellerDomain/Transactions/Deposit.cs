@@ -8,9 +8,9 @@ namespace TellerDomain
     {
         IMapper _mapper;
 
-        public Deposit()
+        public Deposit(IMapper mapper)
         {
-            _mapper = Functions.GetMapper();
+            _mapper = mapper;
         }
 
         public override Transaction ProcessTransaction(Transaction transaction)
@@ -20,8 +20,8 @@ namespace TellerDomain
                 Log.Information($"Account: {transaction.AccountNumber} - No active account found for deposit.");
                 throw new InvalidOperationException($"Account: {transaction.MemberDTO?.AccountNumber} - No active account found for deposit.");
             }
-            Account account;
-            account = _mapper.Map<Account>(transaction.AccountDTO);
+
+            var account = _mapper.Map<Account>(transaction.AccountDTO);
             account.Balance += transaction.AmountToProcess;
             account = DbFunctions.UpdateAccount(account);
             transaction.AccountDTO = _mapper.Map<AccountDTO>(account);

@@ -1,5 +1,4 @@
-﻿using TellerDB;
-
+﻿
 namespace TellerDomain
 {
     public class Transaction
