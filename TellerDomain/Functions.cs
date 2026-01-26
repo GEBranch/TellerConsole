@@ -7,12 +7,12 @@ using TellerDB;
 namespace TellerDomain
 {
 
-    public static class Functions
+    public  class Functions
     {
-        private static Mapper _mapper;
-        private static readonly SerilogLoggerFactory _factory = new SerilogLoggerFactory();
+        private IMapper? _mapper = null;
+        private readonly SerilogLoggerFactory _factory = new SerilogLoggerFactory();
 
-        public static IMapper SetupMappings()
+        public IMapper SetupMappings()
         {
             var services = new MapperConfiguration(cfg =>
             {
@@ -27,25 +27,24 @@ namespace TellerDomain
             return services.CreateMapper();
         }
 
-
-
-
-
-        public static void SetupDb()
+        public void SetupDb()
         {
             using BankContext context = TellerDB.DbFunctions.SetupDb();
         }
 
-        public static IMapper GetMapper()
+        public IMapper GetMapper()
         {
             if (_mapper == null)
             {
+                var mapperConfiguration = new MapperConfiguration(cfg =>
+                 cfg.LicenseKey = @"eyJhbGciOiJSUzI1NiIsImtpZCI6Ikx1Y2t5UGVubnlTb2Z0d2FyZUxpY2Vuc2VLZXkvYmJiMTNhY2I1OTkwNGQ4OWI0Y2IxYzg1ZjA4OGNjZjkiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2x1Y2t5cGVubnlzb2Z0d2FyZS5jb20iLCJhdWQiOiJMdWNreVBlbm55U29mdHdhcmUiLCJleHAiOiIxODAwOTIxNjAwIiwiaWF0IjoiMTc2OTQ1NzUyOSIsImFjY291bnRfaWQiOiIwMTliZmJlMWZkNTg3ZTE5OTRlN2FmMjA1MTQ0NDZlNCIsImN1c3RvbWVyX2lkIjoiY3RtXzAxa2Z4eTZjZHY4NmE4dmhyZzB4MGFwY2owIiwic3ViX2lkIjoiLSIsImVkaXRpb24iOiIwIiwidHlwZSI6IjIifQ.2I9Rb3N28c3VobiA5e7rTb7qInH6p60I_Nt2iF3yr3JapxMjx5S80kUmLfZHS7y-gempfQp0dzHSlV8dOt3bOdb5E1289QKfeTFdviQulh8LIKGSwmfUTZ0KVQL2v0yb7l2106mtQJWhr95A24L5_UYN3vlMfJhTBt3a5cxVpQYqNRxGHDxtWopB2p-EP2v9UwFpxE_UGMubvylbo5fwmtNgDLFI2qJFm5tqiAx_kCmukOTpv1yhyfpKR_WclAjRN3fX5J67tM8_c-HA0Bci9KTPhrOAeAkZ3UmVbn99q5OPYmnhPkOnaZf-r-4gRzudZUZenXMYE6ivp-PNVD0RMA"
+                    , _factory);
                 _mapper = SetupMappings() as Mapper;
             }
             return _mapper;
         }
 
-        public static List<MemberDTO> GetAllMembers()
+        public List<MemberDTO> GetAllMembers()
         {
             using BankContext context = new BankContext();
             List<Member> members = context.Members.Where(m => m.IsActive).ToList();
@@ -58,7 +57,7 @@ namespace TellerDomain
             return memberDTOs;
         }
 
-        public static Transaction GetMemberByAccountNumber(Transaction transaction)
+        public Transaction GetMemberByAccountNumber(Transaction transaction)
         {
             using BankContext context = new BankContext();
             var member = context.Members
@@ -74,7 +73,7 @@ namespace TellerDomain
             return transaction;
         }
 
-        public static Transaction GetMemberByAccountNumberAndType(Transaction transaction)
+        public Transaction GetMemberByAccountNumberAndType(Transaction transaction)
         {
             using BankContext context = new BankContext();
 
@@ -86,8 +85,7 @@ namespace TellerDomain
             var account = member?.Accounts?.FirstOrDefault(a => a.IsActive && a.AccountType == acctType);
             if (account == null)
             {
-                Console.WriteLine($"Account number {transaction.AccountNumber} with account type {transaction.AccountType} was not found.");
-                throw new Exception($"Account number { transaction.AccountNumber } with account type { transaction.AccountType} was not found.");
+                throw new InvalidDataException($"Account number { transaction.AccountNumber } with account type { transaction.AccountType} was not found.");
             }
 
             transaction.MemberDTO = _mapper.Map<MemberDTO>(member);

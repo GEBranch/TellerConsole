@@ -7,9 +7,9 @@ namespace TellerDomain
     {
         IMapper _mapper;
 
-        public Withdraw()
+        public Withdraw(IMapper mapper)
         {
-            _mapper = Functions.GetMapper();
+            _mapper = mapper;
         }
 
         public override Transaction ProcessTransaction(Transaction transaction)
@@ -24,12 +24,9 @@ namespace TellerDomain
                 throw new InvalidDataException($"Insufficient Funds - Current Balance: {transaction.OriginalAccountBalance}");
             }
 
-            Account account = _mapper.Map<Account>(activeAccountDTO);
-
+            var account = _mapper.Map<Account>(activeAccountDTO);
             account.Balance -= transaction.AmountToProcess;
-
             account = DbFunctions.UpdateAccount(account);
-
             transaction.AccountDTO  = _mapper.Map<AccountDTO>(account);
 
             return transaction;
