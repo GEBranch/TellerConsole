@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="../TellerDB/TellerDB.csproj" />
+  <Project Path="../TellerDomain/TellerDomain.csproj" />
+  <Project Path="TellerConsole.csproj" />
+</Solution>

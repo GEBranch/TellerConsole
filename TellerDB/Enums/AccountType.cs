@@ -1,9 +1,9 @@
-﻿namespace TellerConsole.Members
+﻿namespace TellerDB
 {
     public enum AccountType
     {
         Undefined,
         Checking,
-        Savings,
+        Savings
     }
 }
