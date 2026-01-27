@@ -4,3 +4,4 @@ the tables, you will need to load SSMS (Sql Server Management Studio) and connec
 2. Added AutoMapper to reduce the amount of code needed to map between DTOs and Domain Models.
 3. Changed Serilog to log to a file instead of the console.
 3. Added Dependency Injection for AutoMapper.
+3. Added Dependency Injection for Deposit and Withdraw Services.
