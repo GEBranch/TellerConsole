@@ -27,9 +27,9 @@ builder.RegisterAssemblyTypes(typeof(Program).Assembly)
 
 var container = builder.Build();
 
-Deposit deposit;
-Withdraw withdraw;
-IMapper mapper;
+Deposit? deposit = null;
+Withdraw? withdraw = null;
+IMapper? mapper;
 using var scope = container.BeginLifetimeScope();
 try
 {
@@ -94,8 +94,14 @@ while (runProcess == true)
                 continue;
             }
 
-            transaction.OriginalAccountBalance = transaction.AccountDTO.Balance;
+            if (transaction.AccountDTO == null)
+            {
+                Log.Error($"Account: {transaction.MemberDTO?.AccountNumber} - No active account found for transaction.");
+                Console.WriteLine($"Account: {transaction.MemberDTO?.AccountNumber} - No active account found for transaction.");
+                continue;
+            }
 
+            transaction.OriginalAccountBalance = transaction.AccountDTO.Balance;
 
             Console.Write("Enter the Transaction Type (Deposit = 1, Withdrawal = 2): ");
             transaction.TransactionType = (TransactionType)Int32.Parse(Console.ReadLine());
