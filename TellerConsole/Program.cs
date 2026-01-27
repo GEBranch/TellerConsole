@@ -1,7 +1,6 @@
 ﻿using Autofac;
 using Autofac.Core;
 using AutoMapper;
-using Microsoft.Identity.Client;
 using Serilog;
 using Serilog.Extensions.Logging;
 using TellerDomain;
