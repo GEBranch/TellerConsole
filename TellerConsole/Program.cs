@@ -17,19 +17,11 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 var builder = new ContainerBuilder();
-builder.RegisterInstance(_functions.GetMapper()).As<IMapper>().SingleInstance();
-builder.RegisterType<Deposit>();
-builder.RegisterType<Withdraw>();
-
-builder.RegisterAssemblyTypes(typeof(Program).Assembly)
-       .Where(t => t.IsSubclassOf(typeof(Transaction)))
-       .AsSelf();
-
-var container = builder.Build();
+var container = _functions.RegisterDependencies(builder);
 
 Deposit? deposit = null;
 Withdraw? withdraw = null;
-IMapper? mapper;
+IMapper mapper;
 using var scope = container.BeginLifetimeScope();
 try
 {
@@ -50,42 +42,42 @@ while (runProcess == true)
     {
         var transaction = new Transaction();
 
-        runProcess = true;
-
         Console.WriteLine("_____________________________");
         Console.WriteLine("Processing new transaction...");
         Console.WriteLine("_____________________________");
 
         do
         {
-            Console.Write("Enter the Account Number or Q for quit: ");
-            var acctNumber = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(acctNumber))
+            var success = _functions.GetAccountNumber(transaction);
+            if (transaction.QuitProgram)
             {
+                runProcess = false;
+                break;
+            }
+            if (!success)
+            {
+                Log.Error($"Unable to get account number {transaction.AccountNumber}");
+                Console.WriteLine($"Unable to get account number {transaction.AccountNumber}");
                 runProcess = false;
                 continue;
             }
-            if (acctNumber.ToUpper() == "Q")
+
+            success = _functions.GetAccountType(transaction);
+            if (transaction.QuitProgram)
             {
                 runProcess = false;
-                continue;
+                break;
             }
-            transaction.AccountNumber = Convert.ToInt32(acctNumber);
-
-            Console.Write("Enter the Account Type: (Checking = 1, Savings = 2): ");
-            transaction.AccountType = (AccountType)Int32.Parse(Console.ReadLine());
-
-            if (!transaction.AccountType.IsValidAccountType())
-            {
-                Log.Error($"Invalid account type {transaction.AccountType}. Please enter 1 for Checking or 2 for Savings.");
-                Console.WriteLine($"Invalid account type {transaction.AccountType}. Please enter 1 for Checking or 2 for Savings.");
+            if (!success) {
+                Log.Error($"Unable to get account type for account Type {transaction.AccountType}");
+                Console.WriteLine($"Unable to get account type for account Type {transaction.AccountType}");
                 runProcess = false;
                 continue;
             }
 
             try
             {
-                transaction = _functions.GetMemberByAccountNumberAndType(transaction);
+                success = _functions.GetMemberByAccountNumberAndType(transaction);
             }
             catch (InvalidDataException ex)
             {
@@ -94,38 +86,31 @@ while (runProcess == true)
                 continue;
             }
 
-            if (transaction.AccountDTO == null)
+            success = _functions.GetTransactionType(transaction);
+            if (transaction.QuitProgram)
             {
-                Log.Error($"Account: {transaction.MemberDTO?.AccountNumber} - No active account found for transaction.");
-                Console.WriteLine($"Account: {transaction.MemberDTO?.AccountNumber} - No active account found for transaction.");
-                continue;
+                runProcess = false;
+                break;
             }
-
-            transaction.OriginalAccountBalance = transaction.AccountDTO.Balance;
-
-            Console.Write("Enter the Transaction Type (Deposit = 1, Withdrawal = 2): ");
-            transaction.TransactionType = (TransactionType)Int32.Parse(Console.ReadLine());
-
-            if (!transaction.TransactionType.IsValidTransactionType())
+            if (!success)
             {
-                Console.WriteLine($"{transaction.TransactionType} is not a valid transaction type");
-                Log.Error($"{transaction.TransactionType} is not a valid transaction type");
-                continue;
-            }
-
-            Console.Write("Enter the Amount: ");
-            var tranAmount = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(tranAmount))
-            {
-                Log.Error($"Account: {transaction.MemberDTO?.AccountNumber} - Invalid deposit amount: <= zero: {tranAmount}");
+                Log.Error($"Unable to get transaction type for transaction Type {transaction.TransactionType}");
+                Console.WriteLine($"Unable to get transaction type for transaction Type {transaction.TransactionType}");
                 runProcess = false;
                 continue;
             }
-            transaction.AmountToProcess = Convert.ToDecimal(tranAmount);
-            if (transaction.AmountToProcess <= 0)
+
+            success = _functions.GetTransactionAmount(transaction);
+            if (transaction.QuitProgram)
             {
-                Log.Error($"Account: {transaction.MemberDTO?.AccountNumber} - Invalid deposit amount: <= zero: {transaction.AmountToProcess}");
-                Console.WriteLine("Deposit amount must be greater than zero.");
+                runProcess = false;
+                break;
+            }
+            if (!success)
+            {
+                Log.Error($"Unable to get transaction amount for amount {transaction.AmountToProcess}");
+                Console.WriteLine($"Unable to get transaction amount for amount {transaction.AmountToProcess}");
+                runProcess = false;
                 continue;
             }
 

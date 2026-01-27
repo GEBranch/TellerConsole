@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using Autofac;
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Extensions.Logging;
@@ -73,7 +74,7 @@ namespace TellerDomain
             return transaction;
         }
 
-        public Transaction GetMemberByAccountNumberAndType(Transaction transaction)
+        public bool GetMemberByAccountNumberAndType(Transaction transaction)
         {
             using BankContext context = new BankContext();
 
@@ -91,7 +92,96 @@ namespace TellerDomain
             transaction.MemberDTO = _mapper.Map<MemberDTO>(member);
             transaction.AccountDTO = _mapper.Map<AccountDTO>(account);
 
-            return transaction;
+            return true;
+        }
+
+        public IContainer RegisterDependencies(ContainerBuilder builder)
+        {
+            builder.RegisterInstance(GetMapper()).As<IMapper>().SingleInstance();
+            builder.RegisterType<Deposit>();
+            builder.RegisterType<Withdraw>();
+            builder.RegisterAssemblyTypes(typeof(Functions).Assembly)
+                   .Where(t => t.IsSubclassOf(typeof(Transaction)))
+                   .AsSelf();
+
+            IContainer container = builder.Build(); 
+            return container;
+        }
+
+        public bool GetAccountNumber(Transaction transaction)
+        {
+            Console.Write("Enter the Account Number or Q for quit: ");
+            var acctNumber = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(acctNumber))
+            {
+                return false;
+            }
+            if (acctNumber.ToUpper() == "Q")
+            {
+                transaction.QuitProgram = true;
+                return false;
+            }
+            transaction.AccountNumber = Convert.ToInt32(acctNumber);
+
+            return true;
+        }
+
+        public bool GetAccountType(Transaction transaction)
+        {
+            Console.Write("Enter the Account Type (1=Checking, 2=Savings) or Q for quit: ");
+            var acctType = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(acctType))
+            {
+                return false;
+            }
+            if (acctType.ToUpper() == "Q")
+            {
+                transaction.QuitProgram = true;
+                return false;
+            }
+            transaction.AccountType = (AccountType)Convert.ToInt32(acctType);
+
+            return true;
+        }
+
+        public bool GetTransactionType(Transaction transaction)
+        {
+            Console.Write("Enter the Transaction Type (1=Deposit, 2=Withdraw) or Q for quit: ");
+            var transType = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(transType))
+            {
+                return false;
+            }
+            if (transType.ToUpper() == "Q")
+            {
+                transaction.QuitProgram = true;
+                return false;
+            }
+            transaction.TransactionType = (TransactionType)Convert.ToInt32(transType);
+
+            return true;
+        }
+
+        public bool GetTransactionAmount(Transaction transaction)
+        {
+            bool runProcess = true;
+            Console.Write("Enter the Transaction Amount or Q for quit: ");
+            var transAmount = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(transAmount))
+            {
+                transaction.AmountToProcess = 0;
+                return false;
+            }
+            if (transAmount.ToUpper() == "Q")
+            {
+                transaction.AmountToProcess = 0;
+                transaction.QuitProgram = true;
+                return false;
+            }
+            
+            transaction.OriginalAccountBalance = transaction.AccountDTO.Balance;
+            transaction.AmountToProcess = Convert.ToDecimal(transAmount);
+            return true;
         }
     }
 }

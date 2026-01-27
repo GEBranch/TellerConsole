@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="../TellerConsole.UnitTests/TellerConsole.UnitTests.csproj" Id="3b4fd363-e9b1-4df1-9e91-734e2f2a241b" />
   <Project Path="../TellerDB/TellerDB.csproj" />
   <Project Path="../TellerDomain/TellerDomain.csproj" />
   <Project Path="TellerConsole.csproj" />
