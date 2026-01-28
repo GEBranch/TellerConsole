@@ -140,6 +140,12 @@ namespace TellerDomain
                 return false;
             }
             transaction.AccountType = (AccountType)Convert.ToInt32(acctType);
+            if (!transaction.AccountType.IsValidAccountType())
+            {
+                transaction.AccountType = AccountType.Undefined;
+                Console.WriteLine($"Account Type {acctType} is not valid.");
+                return false;
+            } 
 
             return true;
         }
@@ -158,13 +164,19 @@ namespace TellerDomain
                 return false;
             }
             transaction.TransactionType = (TransactionType)Convert.ToInt32(transType);
+            if (!transaction.TransactionType.IsValidTransactionType())
+            {
+                transaction.TransactionType = TransactionType.Undefined;
+                Console.WriteLine($"Transaction Type {transType} is not valid.");
+                return false;
+            }
+
 
             return true;
         }
 
         public bool GetTransactionAmount(Transaction transaction)
         {
-            bool runProcess = true;
             Console.Write("Enter the Transaction Amount or Q for quit: ");
             var transAmount = Console.ReadLine();
             if (string.IsNullOrWhiteSpace(transAmount))

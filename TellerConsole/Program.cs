@@ -58,7 +58,6 @@ while (runProcess == true)
             {
                 Log.Error($"Unable to get account number {transaction.AccountNumber}");
                 Console.WriteLine($"Unable to get account number {transaction.AccountNumber}");
-                runProcess = false;
                 continue;
             }
 
@@ -70,8 +69,6 @@ while (runProcess == true)
             }
             if (!success) {
                 Log.Error($"Unable to get account type for account Type {transaction.AccountType}");
-                Console.WriteLine($"Unable to get account type for account Type {transaction.AccountType}");
-                runProcess = false;
                 continue;
             }
 
@@ -95,8 +92,6 @@ while (runProcess == true)
             if (!success)
             {
                 Log.Error($"Unable to get transaction type for transaction Type {transaction.TransactionType}");
-                Console.WriteLine($"Unable to get transaction type for transaction Type {transaction.TransactionType}");
-                runProcess = false;
                 continue;
             }
 
@@ -108,9 +103,8 @@ while (runProcess == true)
             }
             if (!success)
             {
-                Log.Error($"Unable to get transaction amount for amount {transaction.AmountToProcess}");
-                Console.WriteLine($"Unable to get transaction amount for amount {transaction.AmountToProcess}");
-                runProcess = false;
+                Log.Error($"Unable to get transaction amount for the entered value: {transaction.AmountToProcess}");
+                Console.WriteLine($"Unable to get transaction amount for the entered value: {transaction.AmountToProcess}");
                 continue;
             }
 
