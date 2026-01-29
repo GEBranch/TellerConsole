@@ -48,7 +48,10 @@ while (runProcess == true)
 
         do
         {
-            var success = _functions.GetAccountNumber(transaction);
+            Console.Write("Enter the Account Number or Q for quit: ");
+            var acctNumber = Console.ReadLine();
+
+            var success = _functions.ValidateAccountNumber(transaction, acctNumber);
             if (transaction.QuitProgram)
             {
                 runProcess = false;
@@ -61,13 +64,16 @@ while (runProcess == true)
                 continue;
             }
 
-            success = _functions.GetAccountType(transaction);
+            Console.Write("Enter the Account Type (1=Checking, 2=Savings) or Q for quit: ");
+            var acctType = Console.ReadLine();
+            success = _functions.ValidateAccountType(transaction, acctType);
             if (transaction.QuitProgram)
             {
                 runProcess = false;
                 break;
             }
             if (!success) {
+                Console.WriteLine($"Account Type {acctType} is not valid.");
                 Log.Error($"Unable to get account type for account Type {transaction.AccountType}");
                 continue;
             }
@@ -83,7 +89,10 @@ while (runProcess == true)
                 continue;
             }
 
-            success = _functions.GetTransactionType(transaction);
+            Console.Write("Enter the Transaction Type (1=Deposit, 2=Withdraw) or Q for quit: ");
+            var transType = Console.ReadLine();
+
+            success = _functions.ValidateTransactionType(transaction, transType);
             if (transaction.QuitProgram)
             {
                 runProcess = false;
@@ -91,11 +100,15 @@ while (runProcess == true)
             }
             if (!success)
             {
+                Console.WriteLine($"Transaction Type {transType} is not valid.");
                 Log.Error($"Unable to get transaction type for transaction Type {transaction.TransactionType}");
                 continue;
             }
 
-            success = _functions.GetTransactionAmount(transaction);
+            Console.Write("Enter the Transaction Amount or Q for quit: ");
+            var transAmount = Console.ReadLine();
+
+            success = _functions.ValidateTransactionAmount(transaction, transAmount);
             if (transaction.QuitProgram)
             {
                 runProcess = false;
