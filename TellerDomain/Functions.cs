@@ -108,10 +108,8 @@ namespace TellerDomain
             return container;
         }
 
-        public bool GetAccountNumber(Transaction transaction)
+        public bool ValidateAccountNumber(Transaction transaction, string acctNumber)
         {
-            Console.Write("Enter the Account Number or Q for quit: ");
-            var acctNumber = Console.ReadLine();
             if (string.IsNullOrWhiteSpace(acctNumber))
             {
                 return false;
@@ -126,10 +124,8 @@ namespace TellerDomain
             return true;
         }
 
-        public bool GetAccountType(Transaction transaction)
+        public bool ValidateAccountType(Transaction transaction, string acctType)
         {
-            Console.Write("Enter the Account Type (1=Checking, 2=Savings) or Q for quit: ");
-            var acctType = Console.ReadLine();
             if (string.IsNullOrWhiteSpace(acctType))
             {
                 return false;
@@ -143,17 +139,14 @@ namespace TellerDomain
             if (!transaction.AccountType.IsValidAccountType())
             {
                 transaction.AccountType = AccountType.Undefined;
-                Console.WriteLine($"Account Type {acctType} is not valid.");
                 return false;
             } 
 
             return true;
         }
 
-        public bool GetTransactionType(Transaction transaction)
+        public bool ValidateTransactionType(Transaction transaction, string transType)
         {
-            Console.Write("Enter the Transaction Type (1=Deposit, 2=Withdraw) or Q for quit: ");
-            var transType = Console.ReadLine();
             if (string.IsNullOrWhiteSpace(transType))
             {
                 return false;
@@ -167,7 +160,6 @@ namespace TellerDomain
             if (!transaction.TransactionType.IsValidTransactionType())
             {
                 transaction.TransactionType = TransactionType.Undefined;
-                Console.WriteLine($"Transaction Type {transType} is not valid.");
                 return false;
             }
 
@@ -175,10 +167,8 @@ namespace TellerDomain
             return true;
         }
 
-        public bool GetTransactionAmount(Transaction transaction)
+        public bool ValidateTransactionAmount(Transaction transaction, string transAmount)
         {
-            Console.Write("Enter the Transaction Amount or Q for quit: ");
-            var transAmount = Console.ReadLine();
             if (string.IsNullOrWhiteSpace(transAmount))
             {
                 transaction.AmountToProcess = 0;
@@ -190,6 +180,7 @@ namespace TellerDomain
                 transaction.QuitProgram = true;
                 return false;
             }
+
             
             transaction.OriginalAccountBalance = transaction.AccountDTO.Balance;
             transaction.AmountToProcess = Convert.ToDecimal(transAmount);
