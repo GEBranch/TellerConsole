@@ -2,48 +2,51 @@
 
 namespace TellerDB
 {
-    public static class DbFunctions
+    public class DbFunctions
     {
-        public static BankContext SetupDb()
+        public BankContext _context;
+
+        public DbFunctions()
         {
-            using BankContext context = new BankContext();
+            _context = new BankContext();
+        }
+
+        public BankContext SetupDb()
+        {
+            using BankContext context = _context;
             context.Database.Migrate();
 
             return context;
         }
 
-        public static List<Member> GetAllMembers()
+        public List<Member> GetAllMembers()
         {
-            using var context = new BankContext();
-            List<Member> members = context.Members.ToList();
+            List<Member> members = [.. _context.Members];
             return members;
         }
 
-        public static Member GetMemberByAccountId(int accountNumber)
+        public Member GetMemberByAccountId(int accountNumber)
         {
-            using var context = new BankContext();
-            Member? member = context.Members
+            Member? member = _context.Members
                 .FirstOrDefault(m => m.AccountNumber == accountNumber);
             if (member == null)
             {
-                throw new Exception($"Member with Account Number '{accountNumber}' was not found.");
+                throw new ArgumentNullException($"Member with Account Number '{accountNumber}' was not found.");
             }
             return member;
         }
 
-        public static Member UpdateMember(Member member)
+        public Member UpdateMember(Member member)
         {
-            using var context = new BankContext();
-            context.Members.Update(member);
-            context.SaveChanges();
+            _context.Members.Update(member);
+            _context.SaveChanges();
             return member;
         }
 
-        public static Account UpdateAccount(Account account)
+        public Account UpdateAccount(Account account)
         {
-            using var context = new BankContext();
-            context.Accounts.Update(account);
-            context.SaveChanges();
+            _context.Accounts.Update(account);
+            _context.SaveChanges();
             return account;
         }
     }

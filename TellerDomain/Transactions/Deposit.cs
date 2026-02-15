@@ -23,7 +23,7 @@ namespace TellerDomain
 
             var account = _mapper.Map<Account>(transaction.AccountDTO);
             account.Balance += transaction.AmountToProcess;
-            account = DbFunctions.UpdateAccount(account);
+            account = new DbFunctions().UpdateAccount(account);
             transaction.AccountDTO = _mapper.Map<AccountDTO>(account);
 
             return transaction;

@@ -7,9 +7,13 @@ using TellerDB;
 
 namespace TellerDomain
 {
-
     public  class Functions
     {
+        private readonly BankContext _context;
+        public Functions()
+        {
+            _context = new BankContext();
+        }
         private IMapper? _mapper = null;
         private readonly SerilogLoggerFactory _factory = new SerilogLoggerFactory();
 
@@ -23,6 +27,7 @@ namespace TellerDomain
                 cfg.CreateMap<AccountDTO, Account>();
                 cfg.CreateMap<Address, AddressDTO>();
                 cfg.CreateMap<AddressDTO, Address>();
+                cfg.CreateMap<DbContext, BankContext>();
             }, _factory);
 
             return services.CreateMapper();
@@ -30,7 +35,7 @@ namespace TellerDomain
 
         public void SetupDb()
         {
-            using BankContext context = TellerDB.DbFunctions.SetupDb();
+            using BankContext context = new TellerDB.DbFunctions().SetupDb();
         }
 
         public IMapper GetMapper()
@@ -45,11 +50,11 @@ namespace TellerDomain
             return _mapper;
         }
 
-        public List<MemberDTO> GetAllMembers()
+        public List<MemberDTO> GetAllMembers(BankContext context)
         {
-            using BankContext context = new BankContext();
-            List<Member> members = context.Members.Where(m => m.IsActive).ToList();
-            List<MemberDTO> memberDTOs = new List<MemberDTO>();
+            //using BankContext context = new BankContext();
+            List<Member> members = [.. context.Members.Where(m => m.IsActive)];
+            List<MemberDTO> memberDTOs = [];
             foreach (var member in members)
             {
                 MemberDTO memberDTO = _mapper.Map<MemberDTO>(members);
@@ -60,7 +65,7 @@ namespace TellerDomain
 
         public Transaction GetMemberByAccountNumber(Transaction transaction)
         {
-            using BankContext context = new BankContext();
+            using BankContext context = new();
             var member = context.Members
                 .FirstOrDefault(m => m.IsActive && m.AccountNumber == transaction.AccountNumber);
             if (member == null)
@@ -76,10 +81,8 @@ namespace TellerDomain
 
         public bool GetMemberByAccountNumberAndType(Transaction transaction)
         {
-            using BankContext context = new BankContext();
-
             TellerDB.AccountType acctType = (TellerDB.AccountType)transaction.AccountType;
-            var member = context.Members
+            var member = _context.Members
                 .Include(a => a.Accounts)
                 .Include(a => a.Address)
                 .FirstOrDefault(m => m.IsActive && m.AccountNumber == transaction.AccountNumber);
@@ -103,6 +106,7 @@ namespace TellerDomain
             builder.RegisterAssemblyTypes(typeof(Functions).Assembly)
                    .Where(t => t.IsSubclassOf(typeof(Transaction)))
                    .AsSelf();
+            builder.RegisterType<BankContext>().AsSelf().InstancePerLifetimeScope();
 
             IContainer container = builder.Build(); 
             return container;
@@ -119,7 +123,9 @@ namespace TellerDomain
                 transaction.QuitProgram = true;
                 return false;
             }
-            transaction.AccountNumber = Convert.ToInt32(acctNumber);
+            
+            bool isNumeric = int.TryParse(acctNumber, out int accountNumber);
+            transaction.AccountNumber = accountNumber;
 
             return true;
         }
@@ -135,7 +141,10 @@ namespace TellerDomain
                 transaction.QuitProgram = true;
                 return false;
             }
-            transaction.AccountType = (AccountType)Convert.ToInt32(acctType);
+            
+            bool isNumeric = int.TryParse(acctType, out int accountType);
+            transaction.AccountType = (AccountType)accountType;
+            
             if (!transaction.AccountType.IsValidAccountType())
             {
                 transaction.AccountType = AccountType.Undefined;
@@ -156,7 +165,10 @@ namespace TellerDomain
                 transaction.QuitProgram = true;
                 return false;
             }
-            transaction.TransactionType = (TransactionType)Convert.ToInt32(transType);
+
+            bool isNumeric = int.TryParse(transType, out int transactionType);
+            transaction.TransactionType = (TransactionType)transactionType;
+
             if (!transaction.TransactionType.IsValidTransactionType())
             {
                 transaction.TransactionType = TransactionType.Undefined;
@@ -181,9 +193,10 @@ namespace TellerDomain
                 return false;
             }
 
-            
+            bool isDecimal = decimal.TryParse(transAmount, out decimal transactionAmount);
+
             transaction.OriginalAccountBalance = transaction.AccountDTO.Balance;
-            transaction.AmountToProcess = Convert.ToDecimal(transAmount);
+            transaction.AmountToProcess = transactionAmount;
             return true;
         }
     }
