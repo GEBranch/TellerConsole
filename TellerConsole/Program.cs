@@ -2,10 +2,8 @@
 using Autofac.Core;
 using AutoMapper;
 using Serilog;
-using Serilog.Extensions.Logging;
 using TellerDomain;
 
-var _factory = new SerilogLoggerFactory();
 var _functions = new Functions();
 
 bool runProcess = true;
