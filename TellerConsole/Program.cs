@@ -25,9 +25,9 @@ IMapper mapper;
 using var scope = container.BeginLifetimeScope();
 try
 {
-    var result = scope.TryResolve<Deposit>(out deposit);
-    result = scope.TryResolve<Withdraw>(out withdraw);
-    result = scope.TryResolve<IMapper>(out mapper);
+    _ = scope.TryResolve<Deposit>(out deposit);
+    _ = scope.TryResolve<Withdraw>(out withdraw);
+    _ = scope.TryResolve<IMapper>(out mapper);
 } catch (DependencyResolutionException ex)
 {
     Log.Error(ex, $"Dependency resolution failed: {ex.Message}");

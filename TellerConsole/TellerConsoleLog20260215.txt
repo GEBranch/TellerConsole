@@ -1,0 +1,3 @@
+2026-02-15 15:49:12.825 -05:00 [DBG] The Lucky Penny license key details: AutoMapper.Licensing.License
+2026-02-15 15:49:12.840 -05:00 [INF] You have a valid license key for the Lucky Penny software "Bundle" "Community" edition. The license expires on "2027-01-26T00:00:00.0000000+00:00".
+2026-02-15 15:49:12.861 -05:00 [WRN] You do not have a valid license key for the Lucky Penny software AutoMapper. This is allowed for development and testing scenarios. If you are running in production you are required to have a licensed version. Please visit https://luckypennysoftware.com to obtain a valid license.

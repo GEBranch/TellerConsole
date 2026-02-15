@@ -9,9 +9,9 @@ namespace TellerConsole.UnitTests
         [TestMethod]
         public void ValidAccountTypeShouldReturnAsValid()
         {
-            Functions functions = new Functions();
+            Functions functions = new();
 
-            Transaction transaction = new Transaction { AccountType = AccountType.Checking };
+            Transaction transaction = new() { AccountType = AccountType.Checking };
             var result = functions.ValidateAccountType(transaction, "1");
 
             Assert.IsFalse(transaction.QuitProgram);
@@ -22,9 +22,9 @@ namespace TellerConsole.UnitTests
         [TestMethod]
         public void InValidAccountTypeShouldReturnAsInvalid()
         {
-            Functions functions = new Functions();
+            Functions functions = new();
 
-            Transaction transaction = new Transaction { AccountType = AccountType.Checking };
+            Transaction transaction = new() { AccountType = AccountType.Checking };
             var result = functions.ValidateAccountType(transaction, "5");
 
             Assert.IsFalse(transaction.QuitProgram);
@@ -35,9 +35,9 @@ namespace TellerConsole.UnitTests
         [TestMethod]
         public void AccountTypeIfQEnteredQShouldReturnQuitProgramAsTrue()
         {
-            Functions functions = new Functions();
+            Functions functions = new();
 
-            Transaction transaction = new Transaction { AccountType = AccountType.Checking };
+            Transaction transaction = new() { AccountType = AccountType.Checking };
             var result = functions.ValidateAccountType(transaction, "Q");
 
             Assert.IsTrue(transaction.QuitProgram);
@@ -47,14 +47,42 @@ namespace TellerConsole.UnitTests
         [TestMethod]
         public void InvalidAmountEnteredShouldReturnZeroAmount()
         {
-            Functions functions = new Functions();
+            Functions functions = new();
 
-            Transaction transaction = new Transaction { AccountType = AccountType.Checking };
+            Transaction transaction = new() { AccountType = AccountType.Checking };
             var result = functions.ValidateTransactionAmount(transaction, "w");
 
             Assert.IsFalse(transaction.QuitProgram);
             Assert.IsFalse(result);
             Assert.AreEqual(0, transaction.AmountToProcess);
+        }
+
+        [TestMethod]
+        public void ValidAmountEnteredShouldReturnSetAmountToProcess()
+        {
+            Functions functions = new();
+
+            Transaction transaction = new() { AccountType = AccountType.Checking };
+            var result = functions.ValidateTransactionAmount(transaction, "50");
+
+            Assert.IsFalse(transaction.QuitProgram);
+            Assert.IsFalse(result);
+            Assert.AreEqual(50, transaction.AmountToProcess);
+        }
+
+
+        [TestMethod]
+        public void ValidAmountEnteredShouldReturnNewBalance()
+        {
+            Functions functions = new();
+
+            AccountDTO accountDTO = new() { Balance = 200 };
+            Transaction transaction = new() { AccountType = AccountType.Checking, AccountDTO = accountDTO };
+            var result = functions.ValidateTransactionAmount(transaction, "50");
+
+            Assert.IsFalse(transaction.QuitProgram);
+            Assert.IsFalse(result);
+            Assert.AreEqual(250, transaction.AccountDTO.Balance);
         }
     }
 }
