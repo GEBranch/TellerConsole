@@ -52,7 +52,6 @@ namespace TellerDomain
 
         public List<MemberDTO> GetAllMembers(BankContext context)
         {
-            //using BankContext context = new BankContext();
             List<Member> members = [.. context.Members.Where(m => m.IsActive)];
             List<MemberDTO> memberDTOs = [];
             foreach (var member in members)
